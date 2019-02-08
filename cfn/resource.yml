@@ -293,7 +293,7 @@ Resources:
               Provider: CloudFormation
             Configuration:
               ActionMode: CREATE_UPDATE
-              StackName: ${AppName}-${Stage}-deploy
+              StackName: !Sub ${AppName}-${Stage}-deploy
               TemplatePath: SourceArtifact::deploy.yml
               Capabilities: CAPABILITY_NAMED_IAM
               RoleArn: !GetAtt DeployRole.Arn
@@ -301,10 +301,10 @@ Resources:
                 !Sub
                   |-
                   {
-                    "LatestS3Bucket": { "Fn::GetArtifactAtt": [ "BuildArtifact", "BucketName" ] },
-                    "LatestS3Key": { "Fn::GetArtifactAtt": [ "MyAppBuild", "ObjectKey" ] }
-                    "AppName": ${AppName}
-                    "Stage": ${Stage}
+                    "ArtifactBucket": { "Fn::GetArtifactAtt": [ "BuildArtifact", "BucketName" ] },
+                    "ArtifactKey": { "Fn::GetArtifactAtt": [ "BuildArtifact", "ObjectKey" ] },
+                    "AppName": "${AppName}",
+                    "Stage": "${Stage}"
                   }
             InputArtifacts:
               - Name: SourceArtifact

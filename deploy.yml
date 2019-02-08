@@ -1,6 +1,24 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Lambda CI/CD sample deploy component for semi auto trafic control.
 
+Parameters:
+
+  Stage: 
+    Type: String
+    Description: Deploy stage
+
+  AppName: 
+    Type: String
+    Description: Application name
+
+  ArtifactBucket:
+    Type: String
+    Description: Build artifact bucket
+
+  ArtifactKey:
+    Type: String
+    Description: Build artifact object key
+
 Resources:
 
   #############################################
@@ -98,8 +116,8 @@ Resources:
       Handler: index.lambda_handler
       Role: !GetAtt ExecuteLambdaRole.Arn
       Code:
-        S3Bucket: !Ref LatestS3Bucket
-        S3Key: !Ref LatestS3Key
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Ref ArtifactKey
       Runtime: python3.6
       Timeout: 30
 
