@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Lambda CI/CD sample deploy component for semi auto trafic control.
+
+Resources:
+
+  #############################################
+  # APIGW
+  #############################################
+
+  RestApi:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      Name: !Sub ${AppName}-${Stage}
+      Description: "execute job"
+  Execute: 
+    Type: "AWS::ApiGateway::Resource"
+    Properties: 
+      RestApiId: !Ref RestApi
+      ParentId: !GetAtt RestApi.RootResourceId
+      PathPart: execute
+  ExecuteGet: 
+    Type: "AWS::ApiGateway::Method"
+    Properties: 
+      RestApiId: !Ref RestApi
+      ResourceId: !Ref Execute
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: True
+      Integration: 
+        IntegrationHttpMethod: GET
+        Type: AWS_PROXY
+        Uri: !Join [ "", [ "arn:aws:apigateway:", !Ref "AWS::Region", ":lambda:path/2015-03-31/functions/", !GetAtt ExecuteLambda.Arn, "/invocations" ] ]
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+  ExecuteOptions:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref RestApi
+      ResourceId: !Ref Execute
+      HttpMethod: "OPTIONS"
+      AuthorizationType: "NONE"
+      Integration:
+        RequestTemplates: 
+          application/json: '{"statusCode": 200}'
+        IntegrationHttpMethod: OPTIONS
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: ""
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: "Empty"
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+
+  #############################################
+  # Lambda
+  #############################################
+
+  ExecuteLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      RoleName: !Sub ${AppName}-${Stage}-execute-lambda
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  ExecuteLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AppName}-${Stage}-execute
+      Description: Excecute Lambda.
+      Handler: index.lambda_handler
+      Role: !GetAtt ExecuteLambdaRole.Arn
+      Code:
+        S3Bucket: !Ref LatestS3Bucket
+        S3Key: !Ref LatestS3Key
+      Runtime: python3.6
+      Timeout: 30
+
+  LambdaPermissionApiGateway:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ExecuteLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join [ "", [ "arn:aws:execute-api:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":", !Ref RestApi, "/*/*" ] ]

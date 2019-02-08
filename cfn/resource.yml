@@ -1,0 +1,326 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Lambda CI/CD sample strage component for semi auto trafic control.
+
+Parameters:
+
+  Stage: 
+    Type: String
+    Default: dev
+    Description: Deploy stage
+
+  AppName: 
+    Type: String
+    Default: cicd-l-a
+    Description: Application name
+
+  BranchName:
+    Type: String
+    Default: master
+    Description: Use branch name
+
+Resources:
+
+  #############################################
+  # Bucket
+  #############################################
+
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AppName}-${Stage}
+
+  #############################################
+  # Code Repository
+  #############################################
+
+  CodeRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties: 
+      RepositoryDescription: !Sub ${AppName}-${Stage}
+      RepositoryName: !Sub ${AppName}-${Stage}
+
+  #############################################
+  # Lambda
+  #############################################
+
+  DeployLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      RoleName: !Sub ${AppName}-${Stage}-deploy-lambda
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSLambdaFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+        - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  DeployLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AppName}-${Stage}-deploy
+      Description: Deploy Lambda.
+      Handler: index.lambda_handler
+      Role: !GetAtt DeployLambdaRole.Arn
+      Code:
+        ZipFile: !Sub
+          |-
+          # -*- coding: utf-8 -*-
+          import boto3
+
+          def lambda_handler(event, context):
+            print(event)
+
+            lambda_client = boto3.client('lambda')
+            code_pipeline = boto3.client('codepipeline')
+
+            job_id = event['CodePipeline.job']['id']
+            job = event["CodePipeline.job"]["data"]
+            target_lambda = job["actionConfiguration"]["configuration"]["UserParameters"]
+            artifact = job["inputArtifacts"][0]
+            s3Location = artifact["location"]["s3Location"]
+
+            response = lambda_client.update_function_code(
+                FunctionName=target_lambda,
+                S3Bucket=s3Location["bucketName"],
+                S3Key=s3Location["objectKey"],
+                Publish=True
+            )
+
+            code_pipeline.put_job_success_result(jobId=job_id)
+            return response
+
+      Runtime: python3.6
+      Timeout: 300
+
+  #############################################
+  # Code Build
+  #############################################
+
+  BuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      RoleName: !Sub ${AppName}-${Stage}-build
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSCodeCommitReadOnly
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${AppName}-${Stage}-build
+      ServiceRole: !Ref BuildRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/python:3.6.5
+        PrivilegedMode: true
+      Source:
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 30
+
+  #############################################
+  # Code Pipeline
+  #############################################
+
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      RoleName: !Sub ${AppName}-${Stage}-pipeline
+
+  PipelinePolicies: 
+    Type: AWS::IAM::Policy
+    Properties: 
+      PolicyName: !Sub ${AppName}-${Stage}-pipeline
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement: 
+          - Action: 
+              - iam:PassRole
+            Resource: "*"
+            Effect: Allow
+            Condition: 
+              StringEqualsIfExists: 
+                iam:PassedToService: 
+                  - cloudformation.amazonaws.com
+                  - elasticbeanstalk.amazonaws.com
+                  - lambda.amazonaws.com
+          - Action: 
+              - codecommit:CancelUploadArchive
+              - codecommit:GetBranch
+              - codecommit:GetCommit
+              - codecommit:GetUploadArchiveStatus
+              - codecommit:UploadArchive
+              - codedeploy:CreateDeployment
+              - codedeploy:GetApplication
+              - codedeploy:GetApplicationRevision
+              - codedeploy:GetDeployment
+              - codedeploy:GetDeploymentConfig
+              - codedeploy:RegisterApplicationRevision
+              - elasticbeanstalk:*
+              - ec2:*
+              - elasticloadbalancing:*
+              - autoscaling:*
+              - cloudwatch:*
+              - s3:*
+              - sns:*
+              - cloudformation:*
+              - rds:*
+              - sqs:*
+              - ecs:*
+              - ecr:*
+              - lambda:InvokeFunction
+              - lambda:ListFunctions
+              - opsworks:CreateDeployment
+              - opsworks:DescribeApps
+              - opsworks:DescribeCommands
+              - opsworks:DescribeDeployments
+              - opsworks:DescribeInstances
+              - opsworks:DescribeStacks
+              - opsworks:UpdateApp
+              - opsworks:UpdateStack
+              - codebuild:BatchGetBuilds
+              - codebuild:StartBuild
+              - devicefarm:ListProjects
+              - devicefarm:ListDevicePools
+              - devicefarm:GetRun
+              - devicefarm:GetUpload
+              - devicefarm:CreateUpload
+              - devicefarm:ScheduleRun
+              - servicecatalog:ListProvisioningArtifacts
+              - servicecatalog:CreateProvisioningArtifact
+              - servicecatalog:DescribeProvisioningArtifact
+              - servicecatalog:DeleteProvisioningArtifact
+              - servicecatalog:UpdateProduct
+            Resource: "*"
+            Effect: Allow
+      Roles:
+        - !Ref PipelineRole
+
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      RoleName: !Sub ${AppName}-${Stage}-cfn-deploy
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  Pipeline: 
+    Type: AWS::CodePipeline::Pipeline
+    Properties: 
+      Name: !Sub ${AppName}-${Stage}-pipeline
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore: 
+          Type: S3
+          Location: !Ref Bucket
+      Stages: 
+        - Name: Source
+          Actions: 
+            - Name: SourceAction
+              ActionTypeId: 
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeCommit
+              OutputArtifacts: 
+                - Name: SourceArtifact
+              Configuration: 
+                RepositoryName: !GetAtt CodeRepository.Name
+                BranchName: !Ref BranchName
+              RunOrder: 1
+        - Name: Build
+          Actions:
+          - Name: BuildAction
+            ActionTypeId: 
+              Category: Build
+              Owner: AWS
+              Version: 1
+              Provider: CodeBuild
+            InputArtifacts: 
+              - Name: SourceArtifact
+            OutputArtifacts: 
+              - Name: BuildArtifact
+            Configuration: 
+              ProjectName: !Ref CodeBuildProject
+            RunOrder: 1
+        - Name: Deploy
+          Actions:
+          - Name: DeployAction
+            ActionTypeId: 
+              Category: Deploy
+              Owner: AWS
+              Version: 1
+              Provider: CloudFormation
+            Configuration:
+              ActionMode: CREATE_UPDATE
+              StackName: ${AppName}-${Stage}-deploy
+              TemplatePath: SourceArtifact::deploy.yml
+              Capabilities: CAPABILITY_NAMED_IAM
+              RoleArn: !GetAtt DeployRole.Arn
+              ParameterOverrides:
+                !Sub
+                  |-
+                  {
+                    "LatestS3Bucket": { "Fn::GetArtifactAtt": [ "BuildArtifact", "BucketName" ] },
+                    "LatestS3Key": { "Fn::GetArtifactAtt": [ "MyAppBuild", "ObjectKey" ] }
+                    "AppName": ${AppName}
+                    "Stage": ${Stage}
+                  }
+            InputArtifacts:
+              - Name: SourceArtifact
+              - Name: BuildArtifact
+            RunOrder: 1
+
+Outputs:
+
+  Bucket:
+    Description: Bucket.
+    Value: !Ref Bucket
+    Export:
+      Name: !Sub ${AppName}-${Stage}-bucket
+
+  CodeRepository:
+    Description: CodeRepository.
+    Value: !GetAtt CodeRepository.Name 
+    Export:
+      Name: !Sub ${AppName}-${Stage}-code-repository
