@@ -134,11 +134,10 @@ Resources:
       FunctionName: !Ref ExecuteLambda
       FunctionVersion: !GetAtt ExecuteLambdaVersion.Version
       Name: !Ref Stage
-    CodeDeployLambdaAliasUpdate:
-      ApplicationName: cicd-l-sa-dev
-      DeploymentGroupName: cicd-l-sa-dev-deployment-group
-      # ApplicationName: {"Fn::ImportValue": !Join [ "-", [!Ref AppName, !Ref Stage, codedeploy, application] ]}
-      # DeploymentGroupName: {"Fn::ImportValue": !Join [ "-", [!Ref AppName, !Ref Stage, codedeploy, dep, group] ]}
+    UpdatePolicy:
+      CodeDeployLambdaAliasUpdate:
+        ApplicationName: {"Fn::ImportValue": !Join [ "-", [!Ref AppName, !Ref Stage, codedeploy, application] ]}
+        DeploymentGroupName: {"Fn::ImportValue": !Join [ "-", [!Ref AppName, !Ref Stage, codedeploy, dep, group] ]}
 
   LambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
