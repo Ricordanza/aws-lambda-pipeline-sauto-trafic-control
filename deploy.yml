@@ -123,12 +123,14 @@ Resources:
 
   ExecuteLambdaVersion: 
     Type: AWS::Lambda::Version
+    DependsOn: ExecuteLambda
     Properties: 
       FunctionName: !Ref ExecuteLambda
       Description: Excecute Lambda Version.
 
   ExecuteLambdaAlias:
     Type: AWS::Lambda::Alias
+    DependsOn: ExecuteLambdaVersion
     Properties: 
       Description: Excecute Lambda Alias.
       FunctionName: !Ref ExecuteLambda

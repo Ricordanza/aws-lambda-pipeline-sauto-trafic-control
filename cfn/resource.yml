@@ -259,7 +259,7 @@ Resources:
             Configuration: 
               ProjectName: !Ref CodeBuildProject
             RunOrder: 1
-        - Name: CnDeploy
+        - Name: CFnDeploy
           Actions:
           - Name: CFnAction
             ActionTypeId: 
