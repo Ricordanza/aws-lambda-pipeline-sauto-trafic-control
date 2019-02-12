@@ -141,6 +141,7 @@ Resources:
 
   LambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
+    DependsOn: ExecuteLambdaAlias
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Join [ ":", [!GetAtt ExecuteLambda.Arn, !Ref Stage] ]
