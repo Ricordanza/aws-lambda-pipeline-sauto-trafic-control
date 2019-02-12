@@ -63,7 +63,7 @@ Resources:
     Properties:
       RestApiId: !Ref RestApi
       ResourceId: !Ref Execute
-      HttpMethod: "OPTIONS"
+      HttpMethod: OPTIONS
       AuthorizationType: "NONE"
       Integration:
         RequestTemplates: 
