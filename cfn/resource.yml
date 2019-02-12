@@ -141,6 +141,43 @@ Resources:
       TimeoutInMinutes: 30
 
   #############################################
+  # Code Deploy
+  #############################################
+
+  CodeDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codedeploy.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      RoleName: !Sub ${AppName}-${Stage}-deploy
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
+
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub ${AppName}-${Stage}
+      ComputePlatform: Lambda
+
+  CodeDeployDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref CodeDeployApplication
+      DeploymentConfigName: CodeDeployDefault.LambdaCanary10Percent5Minutes
+      DeploymentStyle:
+        DeploymentType: BLUE_GREEN
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+      ServiceRoleArn: !GetAtt CodeDeployRole.Arn
+
+  #############################################
   # Code Pipeline
   #############################################
 
