@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Lambda CI/CD sample strage component for semi auto trafic control.
+Description: Lambda CI/CD sample pipline component for semi auto trafic control.
 
 Parameters:
 
@@ -10,7 +10,7 @@ Parameters:
 
   AppName: 
     Type: String
-    Default: cicd-l-a
+    Default: cicd-l-sa
     Description: Application name
 
   BranchName:

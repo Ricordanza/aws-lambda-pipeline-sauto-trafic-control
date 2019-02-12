@@ -1,6 +1,6 @@
 # variable
 export STAGE="dev"
-export NAME="cicd-l-a"
+export NAME="cicd-l-sa"
 export SYS_NAME=$NAME-$STAGE
 export BRANCH="master"
 export AWS_DEFAULT_REGION="ap-northeast-1"
