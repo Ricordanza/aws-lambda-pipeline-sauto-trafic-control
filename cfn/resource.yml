@@ -259,9 +259,9 @@ Resources:
             Configuration: 
               ProjectName: !Ref CodeBuildProject
             RunOrder: 1
-        - Name: Deploy
+        - Name: CnDeploy
           Actions:
-          - Name: DeployAction
+          - Name: CFnAction
             ActionTypeId: 
               Category: Deploy
               Owner: AWS
@@ -286,6 +286,7 @@ Resources:
               - Name: SourceArtifact
               - Name: BuildArtifact
             RunOrder: 1
+          
 
 Outputs:
 

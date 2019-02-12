@@ -1,4 +1,4 @@
-Lambda CI/CD サンプル マニュアルトラフィックコントロール
+Lambda CI/CD サンプル セミオートトラフィックコントロール
 ====
 
 ## Description
