@@ -3,8 +3,7 @@ Lambda CI/CD サンプル セミオートトラフィックコントロール
 
 ## Description
 CodePipelineを利用して CodeCommit → CodeBuild → CodeDeploy の流れでLambdaを更新するサンプル  
-Lambdaを単純に書き換えるだけでLambdaのバージョン管理やAPIGatewayとの間でAliasを使ったバージョン指定などは行なっていない  
-そのため、トラフィックのコントロールは実装者に委ねられる
+Lambdaのバージョン管理を行いAPIGatewayとの間でAliasを使しCodeDEployでトラフィックコントロールを行う  
 
 ## Install
 ### Preparation
@@ -35,7 +34,7 @@ $ sh ./cfn/_remove.sh
 ```  
 
 ## Limitations
-- CFnのファイルにLambdaのコードを書いているのでpyファイルの名称はindex.py固定になるが実運用ではそんなことはありえないのでCFnを細分化したり事前に別のS3にコード置くなり仕掛けが必要
+- APIGWに対するアクセス制限などは未実装
 
 ## Versioning
 バージョンはv1.2.3という形でtagを付けることにより管理する  
