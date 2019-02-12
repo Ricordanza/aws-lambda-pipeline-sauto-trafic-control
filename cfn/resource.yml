@@ -361,3 +361,15 @@ Outputs:
     Value: !GetAtt CodeRepository.Name 
     Export:
       Name: !Sub ${AppName}-${Stage}-code-repository
+
+  CodeDeployApplication:
+    Description: CodeDeploy Application.
+    Value: !Ref CodeDeployApplication
+    Export:
+      Name: !Sub ${AppName}-${Stage}-codedeploy-application
+
+  CodeDeployDeploymentGroup:
+    Description: CodeDeploy Deployment Group.
+    Value: !Ref CodeDeployDeploymentGroup
+    Export:
+      Name: !Sub ${AppName}-${Stage}-codedeploy-dep-group

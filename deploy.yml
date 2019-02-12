@@ -135,8 +135,8 @@ Resources:
       FunctionVersion: !GetAtt ExecuteLambdaVersion.Version
       Name: !Ref Stage
     CodeDeployLambdaAliasUpdate:
-      ApplicationName: !Ref CodeDeployApplication
-      DeploymentGroupName: !Ref CodeDeployDeploymentGroup
+      ApplicationName: {"Fn::ImportValue": !Join [ "-", [!Ref AppName, !Ref Stage, codedeploy, application] ]}
+      DeploymentGroupName: {"Fn::ImportValue": !Join [ "-", [!Ref AppName, !Ref Stage, codedeploy, dep, group] ]}
 
   LambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
