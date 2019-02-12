@@ -47,7 +47,7 @@ Resources:
       Integration: 
         IntegrationHttpMethod: GET
         Type: AWS_PROXY
-        Uri: !Join [ "", [ "arn:aws:apigateway:", !Ref "AWS::Region", ":lambda:path/2015-03-31/functions/", !GetAtt ExecuteLambda.Arn ":${stageVariables.alias}", "/invocations" ] ]
+        Uri: !Join [ "", [ "arn:aws:apigateway:", !Ref "AWS::Region", ":lambda:path/2015-03-31/functions/", !GetAtt ExecuteLambda.Arn, ":${stageVariables.alias}", "/invocations" ] ]
         IntegrationResponses:
           - StatusCode: 200
       MethodResponses:
