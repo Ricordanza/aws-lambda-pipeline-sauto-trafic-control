@@ -287,7 +287,6 @@ Resources:
               - Name: BuildArtifact
             RunOrder: 1
           
-
 Outputs:
 
   Bucket:

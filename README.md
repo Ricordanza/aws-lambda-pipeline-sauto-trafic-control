@@ -5,6 +5,7 @@ Lambda CI/CD サンプル セミオートトラフィックコントロール
 CodePipelineを利用して CodeCommit → CodeBuild → CodeDeploy の流れでLambdaを更新するサンプル  
 Lambdaのバージョン管理を行いAPIGatewayとの間でAliasを使しCodeDEployでトラフィックコントロールを行う  
 AWS SAM使う方がトラフィックコントロールをシンブルに設定できるのでケースバイケースで使い分けること  
+**2019/0212 AWS::Lambda::VersionはCFnによるアップデートをサポートしておらず、本実装ではLambdaのバージョンとAliasを更新する事ができない**
 
 ## Install
 ### Preparation
