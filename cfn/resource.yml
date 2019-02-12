@@ -170,6 +170,7 @@ Resources:
   CodeDeployDeploymentGroup:
     Type: AWS::CodeDeploy::DeploymentGroup
     Properties:
+      DeploymentGroupName: !Sub ${AppName}-${Stage}-deployment-group
       ApplicationName: !Ref CodeDeployApplication
       DeploymentConfigName: CodeDeployDefault.LambdaCanary10Percent5Minutes
       DeploymentStyle:
