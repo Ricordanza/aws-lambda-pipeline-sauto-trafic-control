@@ -43,7 +43,7 @@ Resources:
       ResourceId: !Ref Execute
       HttpMethod: GET
       AuthorizationType: NONE
-      ApiKeyRequired: True
+      ApiKeyRequired: false
       Integration: 
         IntegrationHttpMethod: GET
         Type: AWS_PROXY
